@@ -171,6 +171,46 @@ class UMFVM_Mapper {
 
     private static function register_hooks( $fk ) {
 
+        // ── Puente listado/directorio y ficha de perfil ─────────────────────
+        // um_filtered_value() aplica primero 'um_profile_field_filter_hook__'
+        // (sin sufijo), donde el propio núcleo de UM
+        // (um_profile_field_filter_xss_validation, en um-filters-fields.php)
+        // valida el value de select/radio comparándolo contra las opciones
+        // registradas del campo (los labels en español). Como el value
+        // guardado para un campo mapeado es el value interno de HubSpot, esa
+        // comparación nunca coincide y UM VACÍA el value a '' ahí mismo,
+        // antes de que este filtro (que engancha 'um_profile_field_filter_hook__{$fk}',
+        // un hook posterior y distinto) llegue a ejecutarse. Por eso no basta
+        // con traducir el $value recibido: ya viene vacío. En su lugar,
+        // releemos el value crudo directamente de usermeta y lo traducimos
+        // nosotros mismos, ignorando el resultado ya corrompido por UM.
+        //
+        // um_filtered_value() siempre espera un string de vuelta (llama a
+        // UM()->shortcodes()->emotize(), que hace stripslashes() sin
+        // comprobar el tipo). Si algún usuario tiene guardado un array en
+        // este campo (dato heredado inconsistente, campo no-multiselect con
+        // valor array), forzamos a string para no tirar un fatal que rompa
+        // la página entera para todos los usuarios del listado.
+        add_filter( 'um_profile_field_filter_hook__' . $fk, function( $value, $data ) use ( $fk ) {
+            $map = UMFVM_Mapper::get_map_any( $fk );
+            if ( ! $map ) {
+                return $value;
+            }
+            $user_id = um_user( 'ID' );
+            if ( ! $user_id ) {
+                return $value;
+            }
+            $raw = get_user_meta( $user_id, $fk, true );
+            if ( empty( $raw ) ) {
+                return $value;
+            }
+            $translated = UMFVM_Mapper::translate_value( $raw, array_flip( $map ) );
+            if ( is_array( $translated ) ) {
+                $translated = implode( ', ', $translated );
+            }
+            return $translated;
+        }, 10, 2 );
+
         // ── Radio ──────────────────────────────────────────────────────────
         // Hace que UM use la clave del array como value del input
         add_filter( 'um_radio_options_pair__' . $fk, '__return_true' );
