@@ -238,6 +238,21 @@ class UMFVM_Admin {
 
                 <div id="umfvm-options-wrap" style="display:none; margin-top:20px">
                     <h3 id="umfvm-options-title" style="margin:0 0 10px; font-size:14px; font-weight:600"></h3>
+
+                    <div style="background:#f6f7f7; border:1px solid #dcdcde; border-radius:4px; padding:10px 14px; margin-bottom:14px; max-width:580px">
+                        <label for="umfvm-csv-input" style="display:block; font-weight:600; margin-bottom:6px">
+                            Importar valores desde CSV
+                        </label>
+                        <p style="margin:0 0 8px; color:#666; font-size:12px">
+                            Pega los values separados por comas, en el mismo orden en que aparecen los labels de abajo (uno por cada fila).
+                        </p>
+                        <textarea id="umfvm-csv-input" rows="2" class="large-text code" placeholder="Endocrinology, Pharmacies, true, ..."></textarea>
+                        <p style="margin:8px 0 0">
+                            <button type="button" id="umfvm-csv-apply" class="button">Aplicar CSV a los campos</button>
+                            <span id="umfvm-csv-msg" style="margin-left:10px; color:#666; font-size:12px"></span>
+                        </p>
+                    </div>
+
                     <table id="umfvm-options-table" class="widefat" style="max-width:580px; border-collapse:collapse">
                         <thead>
                             <tr style="background:#f0f0f1">
@@ -383,8 +398,63 @@ class UMFVM_Admin {
                     $tbody.append($row);
                 });
 
+                $('#umfvm-csv-input').val('');
+                $('#umfvm-csv-msg').text('');
                 $('#umfvm-options-wrap').show();
             }
+
+            // Parsea un CSV simple: separado por comas, admite valores entre
+            // comillas dobles para poder incluir comas literales ("Madrid, España").
+            function parseCsvLine(str) {
+                var out = [];
+                var cur = '';
+                var inQuotes = false;
+                for (var i = 0; i < str.length; i++) {
+                    var ch = str[i];
+                    if (inQuotes) {
+                        if (ch === '"') {
+                            if (str[i + 1] === '"') { cur += '"'; i++; }
+                            else { inQuotes = false; }
+                        } else {
+                            cur += ch;
+                        }
+                    } else {
+                        if (ch === '"') inQuotes = true;
+                        else if (ch === ',') { out.push(cur); cur = ''; }
+                        else cur += ch;
+                    }
+                }
+                out.push(cur);
+                return out.map(function(v) { return $.trim(v); });
+            }
+
+            // Aplica los valores del CSV a los inputs, en el mismo orden
+            // en que se muestran las filas (que es el orden de las opciones del campo).
+            $('#umfvm-csv-apply').on('click', function() {
+                var raw = $('#umfvm-csv-input').val();
+                if ($.trim(raw) === '') {
+                    $('#umfvm-csv-msg').css('color', '#b32d2e').text('Pega antes una lista de valores.');
+                    return;
+                }
+
+                var values = parseCsvLine(raw);
+                var $inputs = $('#umfvm-options-body .umfvm-val');
+
+                $inputs.each(function(i) {
+                    if (typeof values[i] !== 'undefined' && values[i] !== '') {
+                        $(this).val(values[i]);
+                    }
+                });
+
+                var msg = 'Se han aplicado ' + Math.min(values.length, $inputs.length) + ' de ' + $inputs.length + ' campos.';
+                if (values.length !== $inputs.length) {
+                    msg += ' ⚠ El número de valores del CSV (' + values.length + ') no coincide con el número de labels (' + $inputs.length + '). Revisa el orden antes de guardar.';
+                    $('#umfvm-csv-msg').css('color', '#b32d2e');
+                } else {
+                    $('#umfvm-csv-msg').css('color', '#00a32a');
+                }
+                $('#umfvm-csv-msg').text(msg);
+            });
 
             // Formulario seleccionado → carga campos
             $('#umfvm-form').on('change', function() {
