@@ -2,7 +2,7 @@
 /**
  * Plugin Name:  UM Field Value Mapper
  * Description:  Mapeo visual de valores de campos Ultimate Member. Permite definir un value de envío distinto al label visible, por formulario y campo, desde el panel de administración.
- * Version:      1.0.0
+ * Version:      1.0.2
  * Author:       Labolife
  * Text Domain:  umfvm
  */

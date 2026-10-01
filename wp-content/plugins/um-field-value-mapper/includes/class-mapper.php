@@ -61,7 +61,18 @@ class UMFVM_Mapper {
         if ( $form_id && isset( self::$index[ $fk ][ (string) $form_id ] ) ) {
             return self::$index[ $fk ][ (string) $form_id ];
         }
-        return self::get_map_any( $fk );
+        // Formulario no dado de alta: sin mapeo, el plugin no tiene efecto.
+        return null;
+    }
+
+    /**
+     * Mapa del campo según el formulario con el que se registró el usuario
+     * (usermeta 'form_id'). Solo existe si ese formulario está dado de alta.
+     * Se usa en perfil/directorio, donde no hay formulario de alta activo.
+     */
+    private static function map_for_user( $fk, $user_id ) {
+        $form_id = get_user_meta( $user_id, 'form_id', true );
+        return self::resolve_map( $fk, is_scalar( $form_id ) ? (string) $form_id : '' );
     }
 
     /**
@@ -192,12 +203,13 @@ class UMFVM_Mapper {
         // valor array), forzamos a string para no tirar un fatal que rompa
         // la página entera para todos los usuarios del listado.
         add_filter( 'um_profile_field_filter_hook__' . $fk, function( $value, $data ) use ( $fk ) {
-            $map = UMFVM_Mapper::get_map_any( $fk );
-            if ( ! $map ) {
-                return $value;
-            }
             $user_id = um_user( 'ID' );
             if ( ! $user_id ) {
+                return $value;
+            }
+            // Solo si el usuario se registró con un formulario dado de alta.
+            $map = UMFVM_Mapper::map_for_user( $fk, $user_id );
+            if ( ! $map ) {
                 return $value;
             }
             $raw = get_user_meta( $user_id, $fk, true );
@@ -211,9 +223,32 @@ class UMFVM_Mapper {
             return $translated;
         }, 10, 2 );
 
+        // ── Edición de perfil: precarga del valor guardado ─────────────────
+        // El formulario de perfil no está mapeado (sus opciones son los
+        // labels), pero el value guardado en el alta es el mapeado. Solo para
+        // mostrar, traducimos ese value a label al precargar el campo. No
+        // modifica opciones ni guardado.
+        add_filter( 'um_edit_' . $fk . '_field_value', function( $value, $key = '' ) use ( $fk ) {
+            if ( empty( $value ) || ! function_exists( 'um_user' ) || UMFVM_Mapper::get_map( $fk ) ) {
+                return $value;
+            }
+            $user_id = um_user( 'ID' );
+            if ( ! $user_id ) {
+                return $value;
+            }
+            $map = UMFVM_Mapper::map_for_user( $fk, $user_id );
+            if ( ! $map ) {
+                return $value;
+            }
+            return UMFVM_Mapper::translate_value( $value, array_flip( $map ) );
+        }, 10, 2 );
+
         // ── Radio ──────────────────────────────────────────────────────────
         // Hace que UM use la clave del array como value del input
-        add_filter( 'um_radio_options_pair__' . $fk, '__return_true' );
+        // Solo si el formulario activo tiene mapeo para este campo.
+        add_filter( 'um_radio_options_pair__' . $fk, function( $pair ) use ( $fk ) {
+            return UMFVM_Mapper::get_map( $fk ) ? true : $pair;
+        } );
 
         // Reordena el array a [ mapped_value => label ]
         add_filter( 'um_radio_field_options_' . $fk, function( $options ) use ( $fk ) {
@@ -258,14 +293,21 @@ class UMFVM_Mapper {
         // ── Select ─────────────────────────────────────────────────────────
         // Equivalente a um_radio_options_pair__ pero para select: le dice a UM
         // que use la clave del array como value del <option>.
-        // Es un hook global sin field_key — devolver true para todos es seguro
-        // porque los selects sin mapeo ya tienen key === label.
-        add_filter( 'um_select_options_pair', '__return_true' );
+        // Es un hook global: SOLO se activa para el campo $fk cuando el
+        // formulario activo tiene mapeo. En el resto de selects hay que dejar
+        // el valor original, porque sus opciones suelen tener claves
+        // numéricas (0, 1, 2...) y forzar "pair" haría enviar el índice en
+        // lugar de la etiqueta (p. ej. pais = '0').
+        add_filter( 'um_select_options_pair', function( $pair, $data = array() ) use ( $fk ) {
+            if ( is_array( $data ) && isset( $data['metakey'] ) && $data['metakey'] === $fk && UMFVM_Mapper::get_map( $fk ) ) {
+                return true;
+            }
+            return $pair;
+        }, 10, 2 );
 
-        // Hook para selects dinámicos — ya sabemos el campo por el nombre del hook,
-        // usamos get_map_any() que no depende del form_id.
+        // Hook para selects dinámicos — solo si el formulario activo tiene mapeo.
         add_filter( 'um_select_dropdown_dynamic_options_' . $fk, function( $options ) use ( $fk ) {
-            $map = UMFVM_Mapper::get_map_any( $fk );
+            $map = UMFVM_Mapper::get_map( $fk );
             if ( ! $map ) {
                 return $options;
             }
@@ -282,7 +324,7 @@ class UMFVM_Mapper {
             if ( $key !== $fk ) {
                 return $options;
             }
-            $map = UMFVM_Mapper::get_map_any( $fk );
+            $map = UMFVM_Mapper::get_map( $fk );
             if ( ! $map ) {
                 return $options;
             }
@@ -296,21 +338,6 @@ class UMFVM_Mapper {
     }
 
     /**
-     * Devuelve el mapa combinado de todos los formularios que tienen este campo.
-     * Útil en hooks ya específicos de campo donde el form_id es irrelevante.
-     */
-    public static function get_map_any( $fk ) {
-        if ( ! isset( self::$index[ $fk ] ) ) {
-            return null;
-        }
-        $merged = array();
-        foreach ( self::$index[ $fk ] as $map ) {
-            $merged = array_merge( $merged, $map );
-        }
-        return $merged ?: null;
-    }
-
-    /**
      * Devuelve el mapa [ label => mapped_value ] para el campo y el formulario
      * que se está renderizando en este momento, o null si no hay mapeo.
      */
@@ -321,15 +348,10 @@ class UMFVM_Mapper {
 
         $form_id = self::current_form_id();
 
+        // Solo formularios dados de alta. Si no se conoce el formulario activo
+        // o no tiene mapeo para este campo, el plugin no actúa.
         if ( $form_id && isset( self::$index[ $fk ][ $form_id ] ) ) {
             return self::$index[ $fk ][ $form_id ];
-        }
-
-        // Si no se puede determinar el formulario activo pero el campo
-        // solo tiene un mapeo configurado, se aplica directamente.
-        $maps = self::$index[ $fk ];
-        if ( count( $maps ) === 1 ) {
-            return reset( $maps );
         }
 
         return null;
