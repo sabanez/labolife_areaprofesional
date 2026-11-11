@@ -1,0 +1,25 @@
+# ==========================================================================
+# [2026-11-11] .gitignore del repo. Evita subir por error credenciales,
+# volcados de base de datos, logs y copias de seguridad del servidor.
+# Los ficheros ya versionados NO se ven afectados por estas reglas.
+# ==========================================================================
+
+# Credenciales y configuracion local (wp-config.php lleva claves de BD)
+wp-config.php
+.env
+
+# Volcados de base de datos
+*.sql
+*.sql.gz
+
+# Logs
+*.log
+
+# Copias de seguridad y paquetes
+*.zip
+/backup/
+/wp-content/ai1wm-backups/
+
+# Basura del sistema / shell
+.DS_Store
+.bash_history
