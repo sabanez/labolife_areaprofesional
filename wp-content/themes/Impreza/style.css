@@ -1,0 +1,185 @@
+/*
+Theme Name: Impreza
+Description: Multi-Purpose WordPress Theme.
+Version: 8.11
+Author:	UpSolution
+Theme URI: http://impreza.us-themes.com/
+Author URI: http://us-themes.com/
+License: Themeforest Split Licence
+License URI: -
+Text Domain: us
+Domain Path: /common/languages
+*/
+
+.button-accordion {
+	margin-bottom:50px;
+	border:0px !important
+}
+.button-accordion button.w-tabs-section-header:hover,
+.button-accordion button.w-tabs-section-header:active,
+.no-touch .button-accordion button.w-tabs-section-header:focus{
+	background-color: var(--color-alt-content-primary);
+}
+.button-accordion button.w-tabs-section-header{
+	border-radius: 25px;
+	background-color: var(--color-alt-content-primary);
+}
+.professional-section.button-accordion button.w-tabs-section-header,
+.no-touch .professional-section.button-accordion button.w-tabs-section-header:focus{
+	background-color: #0052DA;
+	color:#fff;
+}
+
+.vc_column_container.left-column-register{display:block}
+
+#um_field_1414_contact_job_title_es .um-clear,
+#um_field_1415_contact_job_title_es .um-clear,
+#um_field_1415_contact_labolife_professional_area .um-clear{
+	float:left;
+}
+.um-1414.um .um-field-label label,
+.um-1415.um .um-field-label label{
+	color: #11005A;
+}
+.um-1414.um .um-row-heading,
+.um-1415.um .um-row-heading{
+	color: #0052DA;
+	font-weight:600;
+	text-transform:uppercase;
+}
+
+div.um-1414.uimob340 .um-field-half.um-field-radio,
+div.um-1415.uimob340 .um-field-half.um-field-radio{
+	width:30%;
+	display:inline-flex
+}
+.um-366.um input[type=submit].um-button,
+.um-1414.um input[type=submit].um-button{
+	background-color: #4AD4E1;
+	color: #11005A;
+	font-size: 14px;
+	font-weight: 600 !important;
+	text-transform: uppercase !important;
+	border-radius: 25px !important;
+}
+.professional-section.button-accordion .um-1415.um input[type=submit].um-button{
+	background-color: #0052DA;
+	color: #FFFFFF !important;	
+	font-size: 14px;
+	font-weight: 600 !important;
+	text-transform: uppercase !important;
+	border-radius: 25px !important;
+}
+.um-field-recibir-informacion .um-field-area .um-field-checkbox.um-field-half{width:25%; display:inline-block}
+.um-field-contact_healthcare_professional .um-field-half,
+.um-field-proteccion-de-datos .um-field-half.um-field-radio-state-disabled{ width: 100%}
+.um-field-proteccion-de-datos .um-field-half.um-field-radio-state-disabled span.um-field-checkbox-option,
+.um-field-contact_healthcare_professional .um-field-half span.um-field-checkbox-option
+{color:#11005a !important}
+
+/* ==========================================================================
+ * [2026-11-11] Pagina /login/ - responsive movil: boton "Registrarme" encima
+ * del titulo "¿Aun no te has inscrito?".
+ * Antes el boton quedaba al final de la columna y obligaba a hacer scroll.
+ * Se reordena solo visualmente con flex + order (sin tocar el contenido de
+ * la pagina en WPBakery). Solo aplica cuando las columnas se apilan (<=600px).
+ * Anclaje: la columna que contiene el titulo con clase .title-registro.
+ * ========================================================================== */
+@media (max-width: 600px) {
+	.um-page-login .wpb_wrapper:has(> .wpb_text_column .title-registro) {
+		display: flex;
+		flex-direction: column;
+	}
+	.um-page-login .wpb_wrapper:has(> .wpb_text_column .title-registro) > .w-btn-wrapper {
+		order: -1;
+		margin-bottom: 1rem;
+	}
+}
+/* ==========================================================================
+ * [2026-11-11] Pagina /registro/ (page-id-1417) - responsive movil: los
+ * acordeones "Registro de farmacias" / "Registro profesionales" suben encima
+ * del bloque oscuro de texto (.left-column-register).
+ * Antes quedaban al final y el usuario tenia que hacer mucho scroll.
+ * Solo reordena visualmente (flex column + order), solo <=600px.
+ * Anclaje: fila que contiene .left-column-register; la columna hermana
+ * (la de los acordeones) pasa a order:-1.
+ * ========================================================================== */
+@media (max-width: 600px) {
+	.page-id-1417 .g-cols:has(> .left-column-register) {
+		flex-direction: column;
+	}
+	.page-id-1417 .g-cols > .left-column-register ~ .wpb_column {
+		order: -1;
+	}
+}
+
+/* ==========================================================================
+ * [2026-11-11] Pagina /registro/ (page-id-1417) - movil: el bloque "¿Ya estas
+ * registrado? / Inicia sesion" tambien sube, justo debajo de los acordeones
+ * de registro y encima del bloque oscuro de texto.
+ * Ese bloque esta en OTRA seccion de WPBakery, asi que para poder reordenarlo
+ * se "aplanan" los contenedores de la seccion del formulario con
+ * display:contents y #page-content pasa a flex column. Orden final:
+ *   logo -> titulo -> acordeones (order 1) -> inicia sesion (order 2)
+ *   -> bloque oscuro (order 3).
+ * Como display:contents elimina el padding de los contenedores, se repone a
+ * mano (padding lateral de 24px en acordeones y titulo, margen inferior en el
+ * bloque oscuro). Sustituye al reorden anterior de /registro/ (la regla
+ * .g-cols:has(> .left-column-register) deja de tener efecto al ser contents).
+ * Solo <=600px.
+ * ========================================================================== */
+@media (max-width: 600px) {
+	.page-id-1417 #page-content {
+		display: flex;
+		flex-direction: column;
+	}
+	.page-id-1417 #page-content > .l-section:has(.left-column-register),
+	.page-id-1417 #page-content > .l-section:has(.left-column-register) > .l-section-h,
+	.page-id-1417 #page-content > .l-section:has(.left-column-register) .g-cols,
+	.page-id-1417 #page-content > .l-section:has(.left-column-register) .vc_column-inner:not(.us_custom_bb436424),
+	.page-id-1417 #page-content > .l-section:has(.left-column-register) .vc_col-sm-12 > .vc_column-inner > .wpb_wrapper,
+	.page-id-1417 #page-content > .l-section:has(.left-column-register) .wpb_column:not(.left-column-register) {
+		display: contents;
+	}
+	/* acordeones */
+	.page-id-1417 #page-content > .l-section:has(.left-column-register) .vc_col-sm-6:not(.left-column-register) > .vc_column-inner > .wpb_wrapper {
+		order: 1;
+		padding: 0 24px;
+	}
+	/* "¿Ya estas registrado? / Inicia sesion" (ultima seccion) */
+	.page-id-1417 #page-content > .l-section:last-child {
+		order: 2;
+	}
+	/* bloque oscuro de texto */
+	.page-id-1417 #page-content .left-column-register {
+		order: 3;
+		margin-bottom: 24px;
+	}
+	/* titulo de bienvenida: repone el padding lateral perdido */
+	.page-id-1417 #page-content > .l-section:has(.left-column-register) .w-text {
+		padding: 0 24px;
+	}
+}
+
+/* ==========================================================================
+ * [2026-11-11] Formulario "Registro profesionales" (um-1415) - movil:
+ * el campo "Tipo de profesional" (radio contact_labolife_professional_area)
+ * muestra una opcion por linea.
+ * Causa: la regla `div.um-1414.uimob340 .um-field-half.um-field-radio` (mas
+ * arriba en este archivo) fuerza width:30% + inline-flex en todos los radios
+ * half; en movil las 3 opciones se solapaban. Aqui se anula SOLO para este
+ * campo (el resto de radios, p.ej. Titulo o Si/No, no cambia).
+ * Se ocultan los .um-clear que UM mete entre opciones para que no dejen huecos.
+ * Solo <=600px.
+ * ========================================================================== */
+@media (max-width: 600px) {
+	.um div.um-field-contact_labolife_professional_area .um-field-area > label.um-field-half.um-field-radio {
+		display: flex;
+		width: 100%;
+		float: none;
+		margin: 0 0 12px;
+	}
+	.um div.um-field-contact_labolife_professional_area .um-field-area > .um-clear {
+		display: none;
+	}
+}
